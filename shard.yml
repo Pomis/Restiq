@@ -1,0 +1,11 @@
+name: chatiq
+version: 0.1.0
+
+authors:
+  - Pomis <pomis172@gmail.com>
+dependencies:
+  kemal:
+    github: sdogruyol/kemal
+    branch: master
+
+license: MIT
