@@ -16,11 +16,11 @@ post "/auth" do |req|
     password = req.params.json["password"].as(String)
     if name + "123" == password
       Users[name] = ChatUser.new name
-      Crypto::MD5.hex_digest(name)
       SOCKETS.each do |socket| 
         socket.send (SocketMessage.new nil, "user_joined", nil, name).to_json
       end
       req.response.status_code = 200
+      Crypto::MD5.hex_digest(name)
     else
       req.response.status_code = 401
     end
