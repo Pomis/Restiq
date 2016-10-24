@@ -7,6 +7,7 @@ require "json"
 SOCKETS = [] of HTTP::WebSocket
 Users = {} of String => ChatUser
 Messages = [] of ChatMessage
+counter = 0
 
 # Авторизация
 post "/auth" do |req|
@@ -26,7 +27,6 @@ end
 
 # Получение последних n сообщений
 get "/messages/:count" do |req|
-
   count = 0
   reqCount = req.params.url["count"].as(String).to_i
   if reqCount > Messages.size
@@ -43,7 +43,7 @@ post "/messages" do |req|
     text = req.params.json["text"].as(String)
     access_token = req.params.json["access_token"].as(String)
     if checkUser(access_token) != nil
-      message = ChatMessage.new(text, checkUser(access_token))
+      message = ChatMessage.new(text, checkUser(access_token), counter += 1)
       Messages << message
       SOCKETS.each { |socket| socket.send "new message sent"}
       req.response.status_code = 200
@@ -57,13 +57,39 @@ post "/messages" do |req|
 end
 
 # Редактирование сообщения
-patch "/messages/:id" do
-  SOCKETS.each { |socket| socket.send "message edited"}
+patch "/messages/:id" do |req|
+  begin
+    text = req.params.json["text"].as(String)
+    access_token = req.params.json["access_token"].as(String)
+    reqId = req.params.url["id"].as(String).to_i
+
+    if (checkUser(access_token) == get_message(reqId).@senderName)
+      get_message(reqId).text = text
+      SOCKETS.each { |socket| socket.send "message edited"}
+      req.response.status_code = 200
+    else
+      req.response.status_code = 401
+    end
+  rescue
+    req.response.status_code = 400
+  end
 end
 
 # Удаление сообщения
-delete "/messages/:id" do
-  SOCKETS.each { |socket| socket.send "message deleted"}
+delete "/messages/:id" do |req|
+  begin
+    access_token = req.params.json["access_token"].as(String)
+    reqId = req.params.url["id"].as(String).to_i
+    if (checkUser(access_token) == get_message(reqId).@senderName)
+      Messages.delete(get_message(reqId))
+      SOCKETS.each { |socket| socket.send "message deleted"}
+      req.response.status_code = 200
+    else
+      req.response.status_code = 401
+    end
+  rescue
+    req.response.status_code = 400
+  end
 end
 
 # Оповещение об обновлении
@@ -80,6 +106,16 @@ def checkUser(access_token : String) : String | Nil
   Users.each do |key, value|
     if access_token == Crypto::MD5.hex_digest(Users[key].name)
       result = Users[key].name
+    end
+  end
+  result
+end
+
+def get_message(id : Int32) : ChatMessage
+  result = ChatMessage.new
+  Messages.each do |value|
+    if value.@id == id
+      result = value
     end
   end
   result

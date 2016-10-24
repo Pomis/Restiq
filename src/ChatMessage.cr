@@ -3,18 +3,21 @@ class ChatMessage
 
 
   JSON.mapping(
+    id: Int32,
     text: String,
     senderName: String,
   )
-  @text : String
+
+  @id : Int32?
+  @text : String | Nil
   @senderName : String | Nil
 
-  def initialize(text : String, senderName : String | Nil)
+  def initialize(text : String, senderName : String | Nil, id : Int32 | Nil)
   	@text = text
   	@senderName = senderName
+    @id = id
   end
 
-  def initialize(text : String)
-  	@text = "text"
+  def initialize()
   end
 end
