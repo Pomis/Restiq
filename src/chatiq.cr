@@ -17,6 +17,10 @@ post "/auth" do |req|
     if name + "123" == password
       Users[name] = ChatUser.new name
       Crypto::MD5.hex_digest(name)
+      SOCKETS.each do |socket| 
+        socket.send (SocketMessage.new nil, "user_joined", nil, name).to_json
+      end
+      req.response.status_code = 200
     else
       req.response.status_code = 401
     end
@@ -45,7 +49,9 @@ post "/messages" do |req|
     if checkUser(access_token) != nil
       message = ChatMessage.new(text, checkUser(access_token), counter += 1)
       Messages << message
-      SOCKETS.each { |socket| socket.send "new message sent"}
+      SOCKETS.each do |socket| 
+        socket.send (SocketMessage.new message.@id, "message_sent", message.@text, checkUser(access_token)).to_json
+      end
       req.response.status_code = 200
     else 
       req.response.status_code = 401
@@ -65,7 +71,9 @@ patch "/messages/:id" do |req|
 
     if (checkUser(access_token) == get_message(reqId).@senderName)
       get_message(reqId).text = text
-      SOCKETS.each { |socket| socket.send "message edited"}
+      SOCKETS.each do |socket| 
+        socket.send (SocketMessage.new reqId, "message_edited", text, checkUser(access_token)).to_json
+      end
       req.response.status_code = 200
     else
       req.response.status_code = 401
@@ -82,7 +90,9 @@ delete "/messages/:id" do |req|
     reqId = req.params.url["id"].as(String).to_i
     if (checkUser(access_token) == get_message(reqId).@senderName)
       Messages.delete(get_message(reqId))
-      SOCKETS.each { |socket| socket.send "message deleted"}
+      SOCKETS.each do |socket| 
+        socket.send (SocketMessage.new reqId, "message_deleted", nil, nil).to_json
+      end
       req.response.status_code = 200
     else
       req.response.status_code = 401
