@@ -23,10 +23,13 @@ post "/auth" do |req|
       Crypto::MD5.hex_digest(name)
     else
       req.response.status_code = 401
+      puts "kek"
     end
   rescue KeyError
     req.response.status_code = 400
+    puts "kek"
   end
+
 end
 
 # Получение последних n сообщений
@@ -55,10 +58,12 @@ post "/messages" do |req|
       req.response.status_code = 200
     else 
       req.response.status_code = 401
+      puts "kek"
     end
   rescue e  
     puts e.message  
     req.response.status_code = 400
+    puts "kek"
   end
 end
 
