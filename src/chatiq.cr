@@ -136,4 +136,24 @@ def get_message(id : Int32) : ChatMessage
   result
 end
 
+error 404 do
+  "404"
+end
+
+error 401 do
+  "401"
+end
+
+error 500 do
+  "500"
+end
+
+error 501 do
+  "501"
+end
+
+error 502 do
+  "502"
+end
+
 Kemal.run
