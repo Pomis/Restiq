@@ -111,9 +111,9 @@ end
 ws "/messages" do |socket|
   SOCKETS << socket
 
-  socket.on_close do
-    SOCKETS.delete socket
-  end
+  # socket.on_close do
+  #   SOCKETS.delete socket
+  # end
 end
 
 def checkUser(access_token : String) : String | Nil
