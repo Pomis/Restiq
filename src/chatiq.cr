@@ -16,9 +16,7 @@ post "/auth" do |req|
     password = req.params.json["password"].as(String)
     if name + "123" == password
       Users[name] = ChatUser.new name
-      SOCKETS.each do |socket| 
-        socket.send (SocketMessage.new nil, "user_joined", nil, name).to_json
-      end
+      send_message((SocketMessage.new nil, "user_joined", nil, name).to_json)
       req.response.status_code = 200
       Crypto::MD5.hex_digest(name)
     else
@@ -52,9 +50,7 @@ post "/messages" do |req|
     if checkUser(access_token) != nil
       message = ChatMessage.new(text, checkUser(access_token), counter += 1)
       Messages << message
-      SOCKETS.each do |socket| 
-        socket.send (SocketMessage.new message.@id, "message_sent", message.@text, checkUser(access_token)).to_json
-      end
+      send_message((SocketMessage.new message.@id, "message_sent", message.@text, checkUser(access_token)).to_json)
       req.response.status_code = 200
     else 
       req.response.status_code = 401
@@ -76,9 +72,7 @@ patch "/messages/:id" do |req|
 
     if (checkUser(access_token) == get_message(reqId).@senderName)
       get_message(reqId).text = text
-      SOCKETS.each do |socket| 
-        socket.send (SocketMessage.new reqId, "message_edited", text, checkUser(access_token)).to_json
-      end
+      send_message((SocketMessage.new reqId, "message_edited", text, checkUser(access_token)).to_json)
       req.response.status_code = 200
     else
       req.response.status_code = 401
@@ -95,9 +89,7 @@ delete "/messages/:id" do |req|
     reqId = req.params.url["id"].as(String).to_i
     if (checkUser(access_token) == get_message(reqId).@senderName)
       Messages.delete(get_message(reqId))
-      SOCKETS.each do |socket| 
-        socket.send (SocketMessage.new reqId, "message_deleted", nil, nil).to_json
-      end
+      send_message((SocketMessage.new reqId, "message_deleted", nil, nil).to_json)
       req.response.status_code = 200
     else
       req.response.status_code = 401
@@ -111,9 +103,9 @@ end
 ws "/messages" do |socket|
   SOCKETS << socket
 
-  # socket.on_close do
-  #   SOCKETS.delete socket
-  # end
+  socket.on_close do
+    SOCKETS.delete socket
+  end
 end
 
 def checkUser(access_token : String) : String | Nil
@@ -135,6 +127,17 @@ def get_message(id : Int32) : ChatMessage
   end
   result
 end
+
+def send_message(message : String)
+  begin
+    SOCKETS.each do |socket| 
+      socket.send message
+    end
+  rescue e
+    puts e.message
+  end
+end
+
 
 error 404 do
   "404"
