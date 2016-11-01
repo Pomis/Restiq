@@ -4,7 +4,7 @@ require "crypto/md5"
 require "./*"
 require "json"
 
-SOCKETS = [] of HTTP::WebSocket
+SOCKETS = {} of HTTP::WebSocket
 Users = {} of String => ChatUser
 Messages = [] of ChatMessage
 counter = 0
@@ -101,10 +101,10 @@ end
 
 # Оповещение об обновлении
 ws "/messages" do |socket|
-  SOCKETS << socket
+  SOCKETS[socket] = socket
 
   socket.on_close do
-    SOCKETS.delete socket
+    SOCKETS.delete(socket)
   end
 end
 
